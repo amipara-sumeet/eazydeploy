@@ -1,12 +1,14 @@
 # EazyDeploy — Product Docs
 
-Working product/engineering documentation for the EazyDeploy project (fork of Vito 4.x, AGPL-3.0).
+Working product/engineering documentation for EazyDeploy (fork of Vito 4.x, AGPL-3.0). Internal-first; no public release until owner sign-off.
 
 | Doc | Purpose |
 |---|---|
-| [ROADMAP.md](./ROADMAP.md) | Phase-wise product and engineering plan, scope, KPIs, risks, decisions |
+| [ROADMAP.md](./ROADMAP.md) | Phase-wise product and engineering plan (v0.2), scope, KPIs, risks, decisions |
 | [VITO_FORK_ANALYSIS.md](./VITO_FORK_ANALYSIS.md) | Deep analysis of the Vito 4.x codebase, gaps, and original recommendations |
 
-**Current status:** planning. Base pinned to Vito `4.1.1` line (`4.x` @ `8598e4dc`). No product code changes yet.
+**Locked stack decisions:** Ubuntu 26.04 default · provider-agnostic · Laravel/PHP + Node + static React + Bun · PM2 for Node · nginx + Caddy first-class · Postgres-only control plane · API + CLI in v1 · Laravel pack (Horizon/Octane/Pulse/Reverb) in v1.
 
-**Principles:** reliability over features · non-destructive automation · idempotent provisioning · measurable exit criteria · Ubuntu-first, provider-agnostic · Laravel/PHP + Node + React in one panel.
+**Status:** planning complete (v0.2). No product code changes yet. Base pinned to Vito `4.1.1` line (`4.x` @ `8598e4dc`).
+
+**Principles:** reliability over features · non-destructive automation · idempotent provisioning · measurable exit criteria · owner review gate each phase.

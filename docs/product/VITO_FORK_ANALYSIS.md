@@ -1,5 +1,7 @@
 # Vito 4.x — Fork & Productization Analysis
 
+> **Note (v0.2):** This document captures the original deep analysis and informed the plan. Some recommendations were superseded by owner decisions in [ROADMAP.md](./ROADMAP.md): Ubuntu 26.04 is now the default (not Hostinger-only), the control plane is Postgres-only (not SQLite), Caddy is first-class (not nginx-only), and Node/PM2 is first-class. Keep this as background, not as the current plan.
+
 **Analysed:** `vitodeploy/vito` @ `8598e4d` (7 Oct 2026), default branch `4.x`, latest release `4.1.1` (21 Sep 2026)
 **Stack:** Laravel 13 / PHP 8.4 / Inertia 3 / React / Tailwind / Shadcn, phpseclib for SSH, Redis + Horizon for queues
 **Size:** 885 PHP files, ~69k LOC app code, 188 test files (~48k LOC tests), 447 frontend files
