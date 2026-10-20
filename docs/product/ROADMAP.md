@@ -417,11 +417,11 @@ lock → prepare → fetch → build → link → migrate? → switch → reload
 
 ### Phase 6 — Brand & UI Refresh (Weeks 16–17)
 
-**Objective:** a product that feels like EazyDeploy, not a Vito fork: **calm, Vercel-like, high-contrast, data-dense without noise.**
+**Objective:** a product that feels like EazyDeploy, not a Vito fork: **calm, Vercel-like, medium-to-high contrast, data-dense without noise.**
 
 **Scope**
 
-1. **Design system:** typography, color tokens, spacing, iconography, dark mode, motion; custom logo/wordmark; remove Vito assets and strings from user-facing surfaces. Calm surfaces, restrained accent color, generous whitespace around dense tables, no marketing fluff.
+1. **Design system:** typography, color tokens, spacing, iconography, dark mode, motion; custom logo/wordmark; remove Vito assets and strings from user-facing surfaces. Calm layered neutral surfaces, **medium-to-high contrast** for text hierarchy and key actions (no stark pure-black-on-white extremes), restrained accent color, generous whitespace around dense tables, no marketing fluff. WCAG AA is the floor, not the target.
 2. **App shell:** sidebar/topbar, command palette (Cmd+K), breadcrumbs, global search, notifications center, empty states, skeletons, toasts.
 3. **Dashboard:** fleet health, recent deploys, failing sites, resource cards, SSL/disk warnings, quick actions.
 4. **Site page:** deploy timeline, health history, logs, env, workers, SSL, domains — dense but readable.
@@ -619,7 +619,7 @@ Only if the owner decides to open it up after private use.
 | 20 | **nginx default** for new sites; Caddy one click away, both first-class | ✅ |
 | 21 | **PM2 single-process + blue/green default**; cluster mode opt-in per site | ✅ |
 | 22 | **Octane defaults to FrankenPHP**, with `max_requests`, RSS watch, threshold reload; RoadRunner optional | ✅ |
-| 23 | UI direction: **calm, Vercel-like**, high-contrast, data-dense without noise | ✅ |
+| 23 | UI direction: **calm, Vercel-like**, medium-to-high contrast, data-dense without noise | ✅ |
 | 24 | Private beta wave 1: **1–2 trusted developers after Phase 7** (read-only until Phase 8/9 gates) | ✅ |
 
 ---
@@ -650,7 +650,7 @@ Only if the owner decides to open it up after private use.
 | PM2 mode | **Single process + blue/green default**; cluster opt-in |
 | CLI distribution | **PHAR in v1**; standalone binary later if needed |
 | Octane server | **FrankenPHP default**; RoadRunner optional; memory safeguarded via `max_requests` + RSS watch |
-| Design direction | **Calm, Vercel-like**; high-contrast, dense data tables, no marketing fluff |
+| Design direction | **Calm, Vercel-like**; **medium-to-high contrast** (not stark), dense data tables, no marketing fluff |
 | Private beta audience | **1–2 trusted developers** after Phase 7; read-only until security/backup gates |
 
 No blocking questions. Awaiting owner go-ahead to start Phase 0.
