@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Version** | 0.2 (decisions incorporated) |
+| **Version** | 0.3 (final decisions locked; awaiting go-ahead) |
 | **Date** | 20 Oct 2026 |
 | **Repo** | `github.com/amipara-sumeet/eazydeploy` (fork of `vitodeploy/vito`, AGPL-3.0) |
 | **Base** | Vito `4.1.1` line @ `8598e4dc`, default branch `4.x` |
@@ -111,13 +111,14 @@ Can SQLite do the job? Yes, for a single user and modest volume, with WAL mode, 
 ### 2.4 Other locked decisions
 
 - **Ubuntu 26.04 LTS is the default and first-choice OS.** 24.04 remains supported, 22.04 is legacy. Hostinger 26.04 is the primary test image.
-- **Forge-specific Laravel integrations are v1 scope:** Horizon, Octane, Pulse, Reverb, scheduler, queues.
-- **PM2 is required for Node**, not optional. PM2 runs per site user under a systemd unit; systemd remains the OS-level supervisor.
-- **Caddy is first-class alongside nginx** in v1 (install, vhost generation, validation, reload, SSL, PHP, Node proxy, redirects, basic auth).
-- **API + CLI are v1 scope**, starting in Phase 1 so CI works immediately.
+- **Forge-specific Laravel integrations are v1 scope:** Horizon, Octane, Pulse, Reverb, scheduler, queues. **Octane defaults to FrankenPHP** with `max_requests` recycling and RSS monitoring to contain memory growth.
+- **PM2 is required for Node**, not optional. PM2 runs **single-process by default** (deterministic blue/green), per site user under a systemd unit; cluster mode is opt-in. systemd remains the OS-level supervisor.
+- **nginx is the default web server; Caddy is one click away and first-class** in v1 (install, vhost generation, validation, reload, SSL, PHP, Node proxy, redirects, basic auth).
+- **API + CLI are v1 scope**, starting in Phase 1 so CI works immediately; CLI ships as a **PHAR**.
 - **Blueprints include MySQL, MariaDB, PostgreSQL, and SQLite** options.
 - **React scope:** static SPA (Vite/CRA) + Next.js SSR in v1; Remix/React Router v7 SSR in v2.
-- **UI:** a real brand and design-system refresh in Phase 6, not a skin. No Vito visual identity in user-facing surfaces.
+- **UI:** **calm, Vercel-like** brand and design-system refresh in Phase 6, not a skin. No Vito visual identity in user-facing surfaces.
+- **Private beta wave 1: 1–2 trusted developers after Phase 7**, read-only until Phase 8 security and Phase 9 backup gates pass.
 - **No public release** until the owner signs off after dogfooding.
 
 ---
@@ -145,10 +146,10 @@ Can SQLite do the job? Yes, for a single user and modest volume, with WAL mode, 
 **Deliberate scope decisions**
 
 - **PM2 per site user, not a global root daemon.** `PM2_HOME=/home/<site>/.pm2`, a systemd unit generated per user, `pm2 save` on boot. This avoids cross-site interference and root-owned Node processes.
-- **Node SSR uses blue/green ports.** Build in a release, start the new PM2 app on the idle port, health check, switch the web-server upstream, drain and stop the old app. PM2 cluster mode is an optional per-site setting.
+- **Node SSR uses blue/green ports.** Build in a release, start the new PM2 app on the idle port, health check, switch the web-server upstream, drain and stop the old app. **PM2 runs single-process by default**; cluster mode is opt-in per site.
 - **Static React is a first-class site type.** Build in release, symlink `current`, serve files directly — zero downtime with no process management.
 - **Caddy and nginx share a webserver contract.** Every generated config is validated before reload; SSL is abstracted (certbot for nginx, automatic HTTPS for Caddy, custom certs for both).
-- **Octane is a special runtime adapter.** Zero-downtime symlink switching is disabled for Octane sites; deploys use `octane:reload` with health checks, per Forge's own guidance.
+- **Octane is a special runtime adapter, FrankenPHP-first.** Zero-downtime symlink switching is disabled for Octane sites; deploys use `octane:reload` with health checks, per Forge's own guidance. Because Octane keeps the app in memory, set `octane.max_requests` (worker recycling), monitor RSS, and optionally schedule a graceful reload above a memory threshold. RoadRunner is an option; Swoole is later.
 
 ---
 
@@ -250,7 +251,7 @@ lock → prepare → fetch → build → link → migrate? → switch → reload
 | Feature | What we do |
 |---|---|
 | **Horizon** | One-click install, Supervisor program, dashboard auth gate, restart on deploy, metrics link |
-| **Octane** | Server choice (FrankenPHP/RoadRunner/Swoole), Supervisor process, `octane:reload` deploy mode, ZDD disabled with warning |
+| **Octane** | **FrankenPHP default** (RoadRunner optional), Supervisor process, `octane:reload` deploy mode, ZDD disabled with warning, `max_requests` recycling + RSS watch to contain memory growth |
 | **Pulse** | Composer install, migrations, dashboard authorization, optional prune schedule |
 | **Reverb** | Install, env/config, Supervisor process, websocket proxy in nginx/Caddy, TLS, restart on deploy |
 | **Scheduler** | One cron entry per site, overlap protection, timezone, logs |
@@ -380,13 +381,13 @@ lock → prepare → fetch → build → link → migrate? → switch → reload
 1. **One-screen deploy wizard:** server (new/existing) → repo/branch → domain → runtime → database (MySQL/MariaDB/Postgres/SQLite) → SSL → deploy. Defaults from repo detection.
 2. **Repo detection:** Laravel, Symfony, WordPress, generic PHP, Next/Nuxt/Nest/Express, Vite/CRA static, Bun; package manager, build command, output dir, start command, PHP/Node version.
 3. **Blueprints:** Laravel + (MySQL|MariaDB|Postgres|SQLite) + Redis/Valkey + Horizon + scheduler; Laravel API; Laravel Octane; Laravel Reverb; WordPress; Next.js SSR; React SPA; Express/Nest API; static HTML.
-4. **Laravel feature pack:** Horizon, Octane, Pulse, Reverb install/manage flows; scheduler; queues; storage link; maintenance mode.
+4. **Laravel feature pack:** Horizon, Octane (FrankenPHP default), Pulse, Reverb install/manage flows; scheduler; queues; storage link; maintenance mode. Octane ships with `max_requests` recycling, RSS monitoring, and an optional memory-threshold reload.
 5. **Env editor safety:** raw editor default for existing files; structured mode validated; no quote corruption; diff + history + rollback.
 6. **Import existing app:** adopt a server/path without redeploying; detect runtime, vhost, workers, cron, SSL; dry-run plan.
 7. **Provider breadth:** unified provider connection flow (tokens, SSH keys, regions, validation); Hostinger, DO, Hetzner, Vultr, Linode, AWS; custom SSH fallback.
 8. **Zero-downtime by default** for new sites; preflight summary of exactly what will change.
 
-**Exit criteria:** 6 repositories (Laravel, WordPress, Next SSR, Vite React, Express API, static) deployed from scratch with zero SSH in < 10 min each; all four DB options validated; Horizon/Octane/Pulse/Reverb blueprints deploy successfully; import of an existing Laravel app with no downtime.
+**Exit criteria:** 6 repositories (Laravel, WordPress, Next SSR, Vite React, Express API, static) deployed from scratch with zero SSH in < 10 min each; all four DB options validated; Horizon/Octane/Pulse/Reverb blueprints deploy successfully; Octane survives a 24-hour soak with RSS growth < 10% after worker recycling; import of an existing Laravel app with no downtime.
 
 **Estimate:** 15 working days. **Depends on:** Phases 1–3.
 
@@ -416,11 +417,11 @@ lock → prepare → fetch → build → link → migrate? → switch → reload
 
 ### Phase 6 — Brand & UI Refresh (Weeks 16–17)
 
-**Objective:** a product that feels like EazyDeploy, not a Vito fork.
+**Objective:** a product that feels like EazyDeploy, not a Vito fork: **calm, Vercel-like, high-contrast, data-dense without noise.**
 
 **Scope**
 
-1. **Design system:** typography, color tokens, spacing, iconography, dark mode, motion; custom logo/wordmark; remove Vito assets and strings from user-facing surfaces.
+1. **Design system:** typography, color tokens, spacing, iconography, dark mode, motion; custom logo/wordmark; remove Vito assets and strings from user-facing surfaces. Calm surfaces, restrained accent color, generous whitespace around dense tables, no marketing fluff.
 2. **App shell:** sidebar/topbar, command palette (Cmd+K), breadcrumbs, global search, notifications center, empty states, skeletons, toasts.
 3. **Dashboard:** fleet health, recent deploys, failing sites, resource cards, SSL/disk warnings, quick actions.
 4. **Site page:** deploy timeline, health history, logs, env, workers, SSL, domains — dense but readable.
@@ -490,7 +491,7 @@ lock → prepare → fetch → build → link → migrate? → switch → reload
 6. **Docs:** install, quickstart per runtime, troubleshooting, architecture, API, CLI, upgrade, security.
 7. **Release process:** versioning, changelog, signed tags, beta/stable channels, opt-in telemetry only.
 8. **Performance pass:** N+1 audit, query budgets, indexes, frontend bundle budget.
-9. **Private beta:** owner-run checklist, 2 weeks of dogfooding, incident log, fix list.
+9. **Private beta:** owner-run checklist, 2 weeks of dogfooding, incident log, fix list. The first external wave is **1–2 trusted developers**, tentatively after Phase 7; give them read-only access until the Phase 8 security and Phase 9 backup gates pass, then full write access.
 
 **Exit criteria:** restore DB + files to a clean environment in < 15 min via UI + docs; upgrade N-1 → N with backup and one-command rollback; runbook rehearsed; 2-week dogfood with ≥ 99% deploy success and no data loss.
 
@@ -564,6 +565,7 @@ Only if the owner decides to open it up after private use.
 | Control-plane idle RAM (2 GB profile) | < 500 MB |
 | Fresh control-plane install (Docker) | < 3 min |
 | Node process recovery after crash | < 10 s, automatic |
+| Octane RSS growth after 24 h soak | < 10% with worker recycling |
 | Alert latency (site down) | < 2 min |
 | Backup restore to clean environment | < 15 min |
 | Audit coverage of privileged actions | 100% |
@@ -582,6 +584,7 @@ Only if the owner decides to open it up after private use.
 | **Caddy parity gaps** (SSL, redirects, websockets) | Medium | Medium | Shared webserver contract; E2E both servers; feature matrix tests |
 | **PM2 multi-user isolation** | Medium | High | Per-site `PM2_HOME`, systemd unit per user, no global root daemon, tests |
 | **Postgres overhead on small VPS** | Medium | Medium | Tuned config, 2 GB recommendation, external DB option, monitoring |
+| **Octane/FrankenPHP memory growth** | Medium | High | `max_requests` worker recycling, RSS monitoring, threshold reload, 24 h soak test, per-site restart policy |
 | Node blue/green complexity | Medium | High | Prototype in P1, traffic-loop tests, PM2 drain, rollback |
 | Provider API changes | Medium | Medium | Thin adapters, recorded fixtures, custom SSH fallback |
 | E2E VM cost/flakiness | Medium | Medium | Containerized harness + nightly cloud smoke |
@@ -612,9 +615,12 @@ Only if the owner decides to open it up after private use.
 | 16 | Full brand/UI refresh in Phase 6; backend untouched | ✅ |
 | 17 | Keep upstream code namespaces until rebrand phase; user-facing brand now | ✅ |
 | 18 | Octane uses `octane:reload`, ZDD disabled | ✅ |
-| 19 | `eazy` CLI as PHAR over the API (revisit binary later) | ⏳ |
-| 20 | Caddy default vs nginx default per site | ⏳ |
-| 21 | PM2 cluster mode default for Node SSR vs single process | ⏳ |
+| 19 | `eazy` CLI as PHAR in v1; standalone binary deferred | ✅ |
+| 20 | **nginx default** for new sites; Caddy one click away, both first-class | ✅ |
+| 21 | **PM2 single-process + blue/green default**; cluster mode opt-in per site | ✅ |
+| 22 | **Octane defaults to FrankenPHP**, with `max_requests`, RSS watch, threshold reload; RoadRunner optional | ✅ |
+| 23 | UI direction: **calm, Vercel-like**, high-contrast, data-dense without noise | ✅ |
+| 24 | Private beta wave 1: **1–2 trusted developers after Phase 7** (read-only until Phase 8/9 gates) | ✅ |
 
 ---
 
@@ -636,11 +642,15 @@ Only if the owner decides to open it up after private use.
 
 ---
 
-## 12. Open questions for review
+## 12. Resolved decisions (formerly open questions)
 
-1. **Caddy default:** keep nginx as the default for new sites, or make Caddy the recommended default (automatic HTTPS)? My recommendation: nginx default for familiarity, Caddy one click away and fully tested.
-2. **PM2 mode:** single process + blue/green (deterministic) vs `cluster` + `pm2 reload` (higher throughput, relies on graceful shutdown)? My recommendation: single process default, cluster opt-in.
-3. **CLI distribution:** PHAR now (fastest) vs standalone binary later? My recommendation: PHAR in v1.
-4. **Octane server:** FrankenPHP, RoadRunner, or Swoole as the default? My recommendation: FrankenPHP (single binary, no PHP extension) with RoadRunner as an option.
-5. **Design direction:** dense/technical (Forge/Ploi) vs calmer/Vercel-like? My recommendation: calm, high-contrast, dense data tables, no marketing fluff.
-6. **Private beta audience:** just you, or 1–2 trusted developers after Phase 7?
+| Question | Decision |
+|---|---|
+| Caddy default vs nginx default | **nginx default** for familiarity; Caddy one click away and fully tested |
+| PM2 mode | **Single process + blue/green default**; cluster opt-in |
+| CLI distribution | **PHAR in v1**; standalone binary later if needed |
+| Octane server | **FrankenPHP default**; RoadRunner optional; memory safeguarded via `max_requests` + RSS watch |
+| Design direction | **Calm, Vercel-like**; high-contrast, dense data tables, no marketing fluff |
+| Private beta audience | **1–2 trusted developers** after Phase 7; read-only until security/backup gates |
+
+No blocking questions. Awaiting owner go-ahead to start Phase 0.
